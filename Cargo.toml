@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 palette = "0.5"
 png = "0.16"
+rand = "0.8"
