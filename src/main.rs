@@ -11,8 +11,14 @@ use ray::Ray;
 use vec::{Point, Vec3};
 
 fn ray_color(r: &Ray) -> Srgb {
-    if hit_sphere(&Point::new(0.0, 0.0, -1.0), 0.5, r) {
-        return Srgb::from_components((0.6, 0.2, 0.3));
+    // Center of the sphere
+    let p = Point::new(0.0, 0.0, -1.0);
+    let t = hit_sphere(&p, 0.5, r);
+    if t > 0.0 {
+        // Unit normal of the sphere
+        let n = (r.at(t) - p).unit();
+        let color = 0.5 * (n + Vec3::new(1.0, 1.0, 1.0));
+        return Srgb::from_components((color.x as f32, color.y as f32, color.z as f32));
     }
 
     let unit_direction = r.direction.unit();
@@ -21,13 +27,17 @@ fn ray_color(r: &Ray) -> Srgb {
     Srgb::from_components((color.x as f32, color.y as f32, color.z as f32))
 }
 
-fn hit_sphere(center: &Point, radius: f64, r: &Ray) -> bool {
+fn hit_sphere(center: &Point, radius: f64, r: &Ray) -> f64 {
     let oc = r.origin - *center;
     let a = r.direction.dot(r.direction);
     let b = 2.0 * oc.dot(r.direction);
     let c = oc.dot(oc) - radius.powi(2);
     let discriminant = b.powi(2) - 4.0 * a * c;
-    discriminant > 0.0
+    if discriminant < 0.0 {
+        -1.0
+    } else {
+        (-b - discriminant.sqrt()) / (2.0 * a)
+    }
 }
 
 fn main() {
@@ -82,7 +92,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/hit-sphere.png");
+    let path = Path::new(r"./output/sphere-normals.png");
     let file = File::create(path).unwrap();
     let ref mut w = BufWriter::new(file);
 
