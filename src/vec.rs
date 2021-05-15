@@ -35,6 +35,14 @@ impl Vec3 {
         [r, g, b]
     }
 
+    pub fn sqrt(&self) -> Self {
+        Self {
+            x: self.x.sqrt(),
+            y: self.y.sqrt(),
+            z: self.z.sqrt(),
+        }
+    }
+
     // Length of the vector
     pub fn mag(&self) -> f64 {
         self.mag_squared().sqrt()
