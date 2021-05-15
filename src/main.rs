@@ -11,10 +11,23 @@ use ray::Ray;
 use vec::{Point, Vec3};
 
 fn ray_color(r: &Ray) -> Srgb {
+    if hit_sphere(&Point::new(0.0, 0.0, -1.0), 0.5, r) {
+        return Srgb::from_components((0.6, 0.2, 0.3));
+    }
+
     let unit_direction = r.direction.unit();
     let t = 0.5 * (unit_direction.y + 1.0);
     let color = (1.0 - t) * Point::new(1.0, 1.0, 1.0) + t * Point::new(0.5, 0.7, 1.0);
     Srgb::from_components((color.x as f32, color.y as f32, color.z as f32))
+}
+
+fn hit_sphere(center: &Point, radius: f64, r: &Ray) -> bool {
+    let oc = r.origin - *center;
+    let a = r.direction.dot(r.direction);
+    let b = 2.0 * oc.dot(r.direction);
+    let c = oc.dot(oc) - radius.powi(2);
+    let discriminant = b.powi(2) - 4.0 * a * c;
+    discriminant > 0.0
 }
 
 fn main() {
@@ -69,7 +82,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/gradient.png");
+    let path = Path::new(r"./output/hit-sphere.png");
     let file = File::create(path).unwrap();
     let ref mut w = BufWriter::new(file);
 
