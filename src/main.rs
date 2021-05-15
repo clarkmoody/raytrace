@@ -1,4 +1,5 @@
 use rand::distributions::{Distribution, Uniform};
+use rand::rngs::ThreadRng;
 
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -14,9 +15,22 @@ use hittable::Hittable;
 use ray::Ray;
 use vec::{Color, Point, Vec3};
 
-fn ray_color(r: &Ray, world: &hittable::List) -> Color {
+fn ray_color(
+    r: &Ray,
+    world: &hittable::List,
+    depth: usize,
+    vec_dist: &Uniform<f64>,
+    rng: &mut ThreadRng,
+) -> Color {
+    if depth == 0 {
+        return Color::ZERO;
+    }
+
     if let Some(hit) = world.hit(r, 0.0..=f64::MAX) {
-        return 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
+        // Random bounce target
+        let target = hit.point + hit.normal + Vec3::random_unit(vec_dist, rng);
+        let next_ray = Ray::new(hit.point, target - hit.point);
+        return 0.5 * ray_color(&next_ray, world, depth.saturating_sub(1), vec_dist, rng);
     }
 
     let unit_direction = r.direction.unit();
@@ -31,9 +45,11 @@ fn main() {
     let get_width = |height: usize| aspect_ratio.0 * height / aspect_ratio.1;
     let width = get_width(height);
     let samples_per_pixel = 100;
+    let max_depth = 50;
 
     // Random number utilities
-    let udist = Uniform::new(0.0, 1.0);
+    let sample_dist = Uniform::new(0.0, 1.0);
+    let vec_dist = Uniform::new_inclusive(-1.0, 1.0);
     let mut rng = rand::thread_rng();
 
     let mut image_data = vec![0; width * height * 3];
@@ -55,13 +71,13 @@ fn main() {
         for x in 0..width {
             let mut color = Color::ZERO;
             for _ in 0..samples_per_pixel {
-                let rand_x = udist.sample(&mut rng);
-                let rand_y = udist.sample(&mut rng);
+                let rand_x = sample_dist.sample(&mut rng);
+                let rand_y = sample_dist.sample(&mut rng);
                 let u = (x as f64 + rand_x) / (width - 1) as f64;
                 let v = 1.0 - (y as f64 + rand_y) / (height - 1) as f64;
 
                 let r = camera.get_ray(u, v);
-                color += ray_color(&r, &world);
+                color += ray_color(&r, &world, max_depth, &vec_dist, &mut rng);
             }
             color /= samples_per_pixel as f64;
 
@@ -74,7 +90,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/antialiasing.png");
+    let path = Path::new(r"./output/diffuse-material.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
