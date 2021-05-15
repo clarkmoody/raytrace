@@ -63,14 +63,22 @@ impl Vec3 {
         *self /= self.mag();
     }
 
-    pub fn random_unit(vec_dist: &Uniform<f64>, rng: &mut ThreadRng) -> Self {
+    pub fn random_inside_unit(vec_dist: &Uniform<f64>, rng: &mut ThreadRng) -> Self {
         // vec_dist is unifrom over -1.0..=1.0
-        Self::new(
-            vec_dist.sample(rng),
-            vec_dist.sample(rng),
-            vec_dist.sample(rng),
-        )
-        .unit()
+        loop {
+            let v = Self::new(
+                vec_dist.sample(rng),
+                vec_dist.sample(rng),
+                vec_dist.sample(rng),
+            );
+            if v.mag_squared() <= 1.0 {
+                return v;
+            }
+        }
+    }
+
+    pub fn random_unit(vec_dist: &Uniform<f64>, rng: &mut ThreadRng) -> Self {
+        Self::random_inside_unit(vec_dist, rng).unit()
     }
 
     pub fn dot(&self, other: Self) -> f64 {
