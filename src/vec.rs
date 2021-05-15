@@ -1,3 +1,6 @@
+use rand::distributions::{Distribution, Uniform};
+use rand::rngs::ThreadRng;
+
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Debug, Clone, Copy)]
@@ -50,6 +53,16 @@ impl Vec3 {
     // Transform into unit vector
     pub fn make_unit(&mut self) {
         *self /= self.mag();
+    }
+
+    pub fn random_unit(vec_dist: &Uniform<f64>, rng: &mut ThreadRng) -> Self {
+        // vec_dist is unifrom over -1.0..=1.0
+        Self::new(
+            vec_dist.sample(rng),
+            vec_dist.sample(rng),
+            vec_dist.sample(rng),
+        )
+        .unit()
     }
 
     pub fn dot(&self, other: Self) -> f64 {
