@@ -40,8 +40,8 @@ impl Vec3 {
     }
 
     // Transform into unit vector
-    pub fn into_unit(&mut self) {
-        *self /= self.mag()
+    pub fn make_unit(&mut self) {
+        *self /= self.mag();
     }
 
     pub fn dot(&self, other: Self) -> f64 {
