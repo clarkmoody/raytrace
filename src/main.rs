@@ -4,20 +4,17 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
+mod hittable;
 mod ray;
 mod vec;
 
+use hittable::Hittable;
 use ray::Ray;
 use vec::{Point, Vec3};
 
-fn ray_color(r: &Ray) -> Srgb {
-    // Center of the sphere
-    let p = Point::new(0.0, 0.0, -1.0);
-    let t = hit_sphere(&p, 0.5, r);
-    if t > 0.0 {
-        // Unit normal of the sphere
-        let n = (r.at(t) - p).unit();
-        let color = 0.5 * (n + Vec3::new(1.0, 1.0, 1.0));
+fn ray_color(r: &Ray, world: &hittable::List) -> Srgb {
+    if let Some(hit) = world.hit(r, 0.0..=f64::MAX) {
+        let color = 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
         return Srgb::from_components((color.x as f32, color.y as f32, color.z as f32));
     }
 
@@ -25,19 +22,6 @@ fn ray_color(r: &Ray) -> Srgb {
     let t = 0.5 * (unit_direction.y + 1.0);
     let color = (1.0 - t) * Point::new(1.0, 1.0, 1.0) + t * Point::new(0.5, 0.7, 1.0);
     Srgb::from_components((color.x as f32, color.y as f32, color.z as f32))
-}
-
-fn hit_sphere(center: &Point, radius: f64, r: &Ray) -> f64 {
-    let oc = r.origin - *center;
-    let a = r.direction.mag_squared();
-    let half_b = oc.dot(r.direction);
-    let c = oc.mag_squared() - radius.powi(2);
-    let discriminant = half_b.powi(2) - a * c;
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
-    }
 }
 
 fn main() {
@@ -51,6 +35,11 @@ fn main() {
 
     // Get index of Red value. Green and Blue are +1, +2
     let image_index = |x: usize, y: usize| 3 * (y * width + x);
+
+    // World objects
+    let mut world = hittable::List::default();
+    world.add(hittable::Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5));
+    world.add(hittable::Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0));
 
     // Camera viewport details
     let viewport_height = 2.0;
@@ -80,7 +69,7 @@ fn main() {
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
 
-            let color = ray_color(&r);
+            let color = ray_color(&r, &world);
 
             let rgb: [u8; 3] = color.into_format().into_raw();
 
@@ -92,9 +81,9 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/sphere-normals.png");
+    let path = Path::new(r"./output/hittables.png");
     let file = File::create(path).unwrap();
-    let ref mut w = BufWriter::new(file);
+    let w = &mut BufWriter::new(file);
 
     let mut encoder = png::Encoder::new(w, width as u32, height as u32);
     encoder.set_color(png::ColorType::RGB);
