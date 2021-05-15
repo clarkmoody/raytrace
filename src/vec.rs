@@ -7,6 +7,7 @@ pub struct Vec3 {
     pub z: f64,
 }
 
+pub type Color = Vec3;
 pub type Point = Vec3;
 
 impl Vec3 {
@@ -22,6 +23,13 @@ impl Vec3 {
 
     pub fn components(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
+    }
+
+    pub fn as_color_u8(&self) -> [u8; 3] {
+        let r = (self.x.clamp(0.0, 1.0) * 255.0).floor() as u8;
+        let g = (self.y.clamp(0.0, 1.0) * 255.0).floor() as u8;
+        let b = (self.z.clamp(0.0, 1.0) * 255.0).floor() as u8;
+        [r, g, b]
     }
 
     // Length of the vector
