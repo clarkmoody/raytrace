@@ -4,6 +4,19 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
+mod ray;
+mod vec;
+
+use ray::Ray;
+use vec::{Point, Vec3};
+
+fn ray_color(r: &Ray) -> Srgb {
+    let unit_direction = r.direction.unit();
+    let t = 0.5 * (unit_direction.y + 1.0);
+    let color = (1.0 - t) * Point::new(1.0, 1.0, 1.0) + t * Point::new(0.5, 0.7, 1.0);
+    Srgb::from_components((color.x as f32, color.y as f32, color.z as f32))
+}
+
 fn main() {
     let height: usize = 288;
     // TODO: A type for this
@@ -16,14 +29,36 @@ fn main() {
     // Get index of Red value. Green and Blue are +1, +2
     let image_index = |x: usize, y: usize| 3 * (y * width + x);
 
+    // Camera viewport details
+    let viewport_height = 2.0;
+    let viewport_width = aspect_ratio.0 as f64 * viewport_height / aspect_ratio.1 as f64;
+    let focal_length = 1.0;
+
+    let origin = Point::ZERO;
+    // +x to the right
+    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
+    // +y up
+    let vertical = Vec3::new(0.0, viewport_height, 0.0);
+    // +z is out of the frame
+    let lower_left_corner =
+        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+
     for y in 0..height {
+        let v = 1.0 - y as f64 / (height - 1) as f64;
+
         print!("\rScanlines remaining {:>5}", height - y);
         std::io::stdout().flush().unwrap();
-        let pct_y = 1.0 - y as f32 / height as f32;
-        for x in 0..width {
-            let pct_x = x as f32 / width as f32;
 
-            let color = Srgb::from_components((pct_x, pct_y, 0.25));
+        for x in 0..width {
+            let u = x as f64 / (width - 1) as f64;
+
+            let r = Ray::new(
+                origin,
+                lower_left_corner + u * horizontal + v * vertical - origin,
+            );
+
+            let color = ray_color(&r);
+
             let rgb: [u8; 3] = color.into_format().into_raw();
 
             let i = image_index(x, y);
@@ -34,7 +69,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/colors.png");
+    let path = Path::new(r"./output/gradient.png");
     let file = File::create(path).unwrap();
     let ref mut w = BufWriter::new(file);
 
