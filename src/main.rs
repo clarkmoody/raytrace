@@ -26,9 +26,15 @@ fn ray_color(
         return Color::ZERO;
     }
 
-    if let Some(hit) = world.hit(r, 0.0..=f64::MAX) {
+    if let Some(hit) = world.hit(r, 0.001..=f64::MAX) {
         // Random bounce target
-        let target = hit.point + hit.normal + Vec3::random_unit(vec_dist, rng);
+        let random_bounce = Vec3::random_inside_unit(vec_dist, rng);
+        let random_in_hemisphere = if random_bounce.dot(hit.normal) >= 0.0 {
+            random_bounce
+        } else {
+            -random_bounce
+        };
+        let target = hit.point + hit.normal + random_in_hemisphere;
         let next_ray = Ray::new(hit.point, target - hit.point);
         return 0.5 * ray_color(&next_ray, world, depth.saturating_sub(1), vec_dist, rng);
     }
@@ -92,7 +98,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/diffuse-gamma-corrected.png");
+    let path = Path::new(r"./output/shadow-acne-1080.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
