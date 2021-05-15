@@ -1,7 +1,7 @@
 use palette::{Pixel, Srgb};
 
 use std::fs::File;
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 fn main() {
@@ -17,6 +17,8 @@ fn main() {
     let image_index = |x: usize, y: usize| 3 * (y * width + x);
 
     for y in 0..height {
+        print!("\rScanlines remaining {:>5}", height - y);
+        std::io::stdout().flush().unwrap();
         let pct_y = 1.0 - y as f32 / height as f32;
         for x in 0..width {
             let pct_x = x as f32 / width as f32;
@@ -30,6 +32,7 @@ fn main() {
             image_data[i + 2] = rgb[2];
         }
     }
+    print!("\r");
 
     let path = Path::new(r"./output/colors.png");
     let file = File::create(path).unwrap();
