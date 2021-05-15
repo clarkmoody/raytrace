@@ -10,6 +10,20 @@ pub struct Vec3 {
 pub type Point = Vec3;
 
 impl Vec3 {
+    pub const ZERO: Self = Self {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
+
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
+    }
+
+    pub fn components(&self) -> (f64, f64, f64) {
+        (self.x, self.y, self.z)
+    }
+
     // Length of the vector
     pub fn mag(&self) -> f64 {
         self.mag_squared().sqrt()
