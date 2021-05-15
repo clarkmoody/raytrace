@@ -80,6 +80,8 @@ fn main() {
                 color += ray_color(&r, &world, max_depth, &vec_dist, &mut rng);
             }
             color /= samples_per_pixel as f64;
+            // Gamma correction for gamma=2.0 is square root
+            color = color.sqrt();
 
             let rgb: [u8; 3] = color.as_color_u8();
             let i = image_index(x, y);
@@ -90,7 +92,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/diffuse-material.png");
+    let path = Path::new(r"./output/diffuse-gamma-corrected.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
