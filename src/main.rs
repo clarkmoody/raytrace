@@ -1,27 +1,25 @@
-use palette::{Pixel, Srgb};
-
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
+mod camera;
 mod hittable;
 mod ray;
 mod vec;
 
+use camera::Camera;
 use hittable::Hittable;
 use ray::Ray;
-use vec::{Point, Vec3};
+use vec::{Color, Point, Vec3};
 
-fn ray_color(r: &Ray, world: &hittable::List) -> Srgb {
+fn ray_color(r: &Ray, world: &hittable::List) -> Color {
     if let Some(hit) = world.hit(r, 0.0..=f64::MAX) {
-        let color = 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
-        return Srgb::from_components((color.x as f32, color.y as f32, color.z as f32));
+        return 0.5 * (hit.normal + Vec3::new(1.0, 1.0, 1.0));
     }
 
     let unit_direction = r.direction.unit();
     let t = 0.5 * (unit_direction.y + 1.0);
-    let color = (1.0 - t) * Point::new(1.0, 1.0, 1.0) + t * Point::new(0.5, 0.7, 1.0);
-    Srgb::from_components((color.x as f32, color.y as f32, color.z as f32))
+    (1.0 - t) * Point::new(1.0, 1.0, 1.0) + t * Point::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
@@ -41,19 +39,8 @@ fn main() {
     world.add(hittable::Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5));
     world.add(hittable::Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0));
 
-    // Camera viewport details
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio.0 as f64 * viewport_height / aspect_ratio.1 as f64;
-    let focal_length = 1.0;
-
-    let origin = Point::ZERO;
-    // +x to the right
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    // +y up
-    let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    // +z is out of the frame
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+    // Create camera
+    let camera = Camera::new(2.0, 16.0 / 9.0, 1.0);
 
     for y in 0..height {
         let v = 1.0 - y as f64 / (height - 1) as f64;
@@ -64,14 +51,9 @@ fn main() {
         for x in 0..width {
             let u = x as f64 / (width - 1) as f64;
 
-            let r = Ray::new(
-                origin,
-                lower_left_corner + u * horizontal + v * vertical - origin,
-            );
-
+            let r = camera.get_ray(u, v);
             let color = ray_color(&r, &world);
-
-            let rgb: [u8; 3] = color.into_format().into_raw();
+            let rgb: [u8; 3] = color.as_color_u8();
 
             let i = image_index(x, y);
             image_data[i] = rgb[0];
