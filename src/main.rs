@@ -14,7 +14,7 @@ mod vec;
 
 use camera::Camera;
 use hittable::{Hittable, Sphere};
-use material::{Lambertian, Metal, Scatter};
+use material::{Dielectric, Lambertian, Metal, RefractiveIndex, Scatter};
 use ray::Ray;
 use vec::{Color, Point};
 
@@ -69,7 +69,7 @@ fn main() {
     // World materials
     let ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    let left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.25));
+    let left = Arc::new(Dielectric::new(RefractiveIndex::Sapphire));
     let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
 
     // World objects
@@ -109,7 +109,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/fuzzy-metal.png");
+    let path = Path::new(r"./output/dielectric-schlick.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 

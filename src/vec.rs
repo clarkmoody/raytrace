@@ -19,6 +19,11 @@ impl Vec3 {
         y: 0.0,
         z: 0.0,
     };
+    pub const ONE: Self = Self {
+        x: 1.0,
+        y: 1.0,
+        z: 1.0,
+    };
 
     const NEAR_ZERO_EPS: f64 = 1.0e-8;
 
@@ -112,6 +117,14 @@ impl Vec3 {
 
     pub fn reflect(&self, normal: &Self) -> Self {
         *self - 2.0 * self.dot(*normal) * *normal
+    }
+
+    /// Self should be a unit vector. Eta ratio is source eta / target eta
+    pub fn refract(&self, normal: &Self, eta_ratio: f64) -> Self {
+        let cos_theta = (-*self).dot(*normal).min(1.0);
+        let ray_perpendicular = eta_ratio * (*self + cos_theta * *normal);
+        let ray_parallel = -((1.0 - ray_perpendicular.mag_squared()).abs()).sqrt() * *normal;
+        ray_perpendicular + ray_parallel
     }
 }
 
