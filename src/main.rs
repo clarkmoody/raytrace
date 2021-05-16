@@ -69,8 +69,8 @@ fn main() {
     // World materials
     let ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    let left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
-    let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2)));
+    let left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.25));
+    let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
 
     // World objects
     let mut world = hittable::List::default();
@@ -109,7 +109,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/shiny-metal.png");
+    let path = Path::new(r"./output/fuzzy-metal.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
