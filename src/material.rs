@@ -5,9 +5,11 @@ use crate::hittable::Record;
 use crate::ray::Ray;
 use crate::vec::Color;
 
+pub mod dielectric;
 pub mod lambertian;
 pub mod metal;
 
+pub use dielectric::{Dielectric, RefractiveIndex};
 pub use lambertian::Lambertian;
 pub use metal::Metal;
 
