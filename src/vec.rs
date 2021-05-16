@@ -20,6 +20,8 @@ impl Vec3 {
         z: 0.0,
     };
 
+    const NEAR_ZERO_EPS: f64 = 1.0e-8;
+
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
@@ -81,6 +83,12 @@ impl Vec3 {
         Self::random_inside_unit(vec_dist, rng).unit()
     }
 
+    pub fn near_zero(&self) -> bool {
+        self.x.abs() < Self::NEAR_ZERO_EPS
+            && self.y.abs() < Self::NEAR_ZERO_EPS
+            && self.z.abs() < Self::NEAR_ZERO_EPS
+    }
+
     pub fn dot(&self, other: Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
@@ -91,6 +99,19 @@ impl Vec3 {
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x,
         }
+    }
+
+    /// Hadamard / Schur entrywise product of two vectors
+    pub fn schur(&self, other: Self) -> Self {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
+        }
+    }
+
+    pub fn reflect(&self, normal: &Self) -> Self {
+        *self - 2.0 * self.dot(*normal) * *normal
     }
 }
 

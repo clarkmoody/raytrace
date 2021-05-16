@@ -4,16 +4,19 @@ use rand::rngs::ThreadRng;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
+use std::sync::Arc;
 
 mod camera;
 mod hittable;
+mod material;
 mod ray;
 mod vec;
 
 use camera::Camera;
-use hittable::Hittable;
+use hittable::{Hittable, Sphere};
+use material::{Lambertian, Metal, Scatter};
 use ray::Ray;
-use vec::{Color, Point, Vec3};
+use vec::{Color, Point};
 
 fn ray_color(
     r: &Ray,
@@ -27,16 +30,16 @@ fn ray_color(
     }
 
     if let Some(hit) = world.hit(r, 0.001..=f64::MAX) {
-        // Random bounce target
-        let random_bounce = Vec3::random_inside_unit(vec_dist, rng);
-        let random_in_hemisphere = if random_bounce.dot(hit.normal) >= 0.0 {
-            random_bounce
-        } else {
-            -random_bounce
-        };
-        let target = hit.point + hit.normal + random_in_hemisphere;
-        let next_ray = Ray::new(hit.point, target - hit.point);
-        return 0.5 * ray_color(&next_ray, world, depth.saturating_sub(1), vec_dist, rng);
+        if let Some(Scatter { ray, attenuation }) = hit.material.scatter(r, &hit, vec_dist, rng) {
+            return attenuation.schur(ray_color(
+                &ray,
+                world,
+                depth.saturating_sub(1),
+                vec_dist,
+                rng,
+            ));
+        }
+        return Color::ZERO;
     }
 
     let unit_direction = r.direction.unit();
@@ -63,10 +66,18 @@ fn main() {
     // Get index of Red value. Green and Blue are +1, +2
     let image_index = |x: usize, y: usize| 3 * (y * width + x);
 
+    // World materials
+    let ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    let left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
+    let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2)));
+
     // World objects
     let mut world = hittable::List::default();
-    world.add(hittable::Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5));
-    world.add(hittable::Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0));
+    world.add(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0, ground));
+    world.add(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5, center));
+    world.add(Sphere::new(Point::new(-1.0, 0.0, -1.0), 0.5, left));
+    world.add(Sphere::new(Point::new(1.0, 0.0, -1.0), 0.5, right));
 
     // Create camera
     let camera = Camera::new(2.0, 16.0 / 9.0, 1.0);
@@ -98,7 +109,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/shadow-acne-1080.png");
+    let path = Path::new(r"./output/shiny-metal.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
