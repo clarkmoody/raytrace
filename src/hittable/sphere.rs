@@ -1,17 +1,24 @@
 use super::{Hittable, Record};
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec::Point;
 
 use std::ops::RangeInclusive;
+use std::sync::Arc;
 
 pub struct Sphere {
     center: Point,
     radius: f64,
+    material: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Point, radius: f64, material: Arc<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            material: material.clone(),
+        }
     }
 }
 
@@ -41,6 +48,12 @@ impl Hittable for Sphere {
         let point = r.at(root);
         let outward_normal = (point - self.center) / self.radius;
 
-        Some(Record::new(r, point, outward_normal, root))
+        Some(Record::new(
+            r,
+            point,
+            outward_normal,
+            root,
+            self.material.clone(),
+        ))
     }
 }

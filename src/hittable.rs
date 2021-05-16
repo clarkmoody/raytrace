@@ -1,7 +1,9 @@
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec::{Point, Vec3};
 
 use std::ops::RangeInclusive;
+use std::sync::Arc;
 
 pub mod sphere;
 pub use sphere::Sphere;
@@ -10,6 +12,7 @@ pub use sphere::Sphere;
 pub struct Record {
     pub point: Point,
     pub normal: Vec3,
+    pub material: Arc<dyn Material>,
     pub distance: f64,
     pub front_face: bool,
 }
@@ -49,7 +52,13 @@ impl Hittable for List {
 }
 
 impl Record {
-    pub fn new(r: &Ray, point: Point, outward_normal: Vec3, distance: f64) -> Self {
+    pub fn new(
+        r: &Ray,
+        point: Point,
+        outward_normal: Vec3,
+        distance: f64,
+        material: Arc<dyn Material>,
+    ) -> Self {
         let front_face = r.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
@@ -59,6 +68,7 @@ impl Record {
         Self {
             point,
             normal,
+            material: material.clone(),
             distance,
             front_face,
         }
