@@ -88,6 +88,16 @@ impl Vec3 {
         Self::random_inside_unit(vec_dist, rng).unit()
     }
 
+    pub fn random_inside_unit_disc(vec_dist: &Uniform<f64>, rng: &mut ThreadRng) -> Self {
+        // vec_dist is unifrom over -1.0..=1.0
+        loop {
+            let v = Self::new(vec_dist.sample(rng), vec_dist.sample(rng), 0.0);
+            if v.mag_squared() < 1.0 {
+                return v;
+            }
+        }
+    }
+
     pub fn near_zero(&self) -> bool {
         self.x.abs() < Self::NEAR_ZERO_EPS
             && self.y.abs() < Self::NEAR_ZERO_EPS
