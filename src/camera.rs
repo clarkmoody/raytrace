@@ -9,22 +9,29 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(vertical_field_of_view: f64, aspect_ratio: f64) -> Self {
+    pub fn new(
+        look_from: Point,
+        look_at: Point,
+        up_vector: Vec3,
+        vertical_field_of_view: f64,
+        aspect_ratio: f64,
+    ) -> Self {
         let theta = vertical_field_of_view.to_radians();
         let h = (theta / 2.0).tan();
         let viewport_height = 2.0 * h;
         let viewport_width = viewport_height * aspect_ratio;
 
-        let focal_length = 1.0;
+        // Unit vector pointing toward the camera on the boresight
+        let w = (look_from - look_at).unit();
+        // Unit vector to the right in the frame
+        let u = up_vector.cross(w).unit();
+        // Unit vector pointing up in the frame
+        let v = w.cross(u);
 
-        let origin = Point::ZERO;
-        // +x to the right
-        let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-        // +y up
-        let vertical = Vec3::new(0.0, viewport_height, 0.0);
-        // +z is out of the frame
-        let lower_left_corner =
-            origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+        let origin = look_from;
+        let horizontal = viewport_width * u;
+        let vertical = viewport_height * v;
+        let lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - w;
 
         Self {
             origin,
