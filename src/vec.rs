@@ -98,6 +98,10 @@ impl Vec3 {
         }
     }
 
+    pub fn random(dist: &Uniform<f64>, rng: &mut ThreadRng) -> Self {
+        Self::new(dist.sample(rng), dist.sample(rng), dist.sample(rng))
+    }
+
     pub fn near_zero(&self) -> bool {
         self.x.abs() < Self::NEAR_ZERO_EPS
             && self.y.abs() < Self::NEAR_ZERO_EPS
