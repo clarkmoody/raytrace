@@ -68,9 +68,9 @@ fn main() {
 
     // World materials
     let ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    let center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
     let left = Arc::new(Dielectric::new(RefractiveIndex::Sapphire));
-    let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
+    let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.05));
 
     // World objects
     let mut world = hittable::List::default();
@@ -80,12 +80,22 @@ fn main() {
     world.add(Sphere::new(Point::new(1.0, 0.0, -1.0), 0.5, right));
 
     // Create camera
+    let look_from = Point::new(-2.0, 2.0, 1.0);
+    let look_at = Point::new(0.0, 0.0, -1.0);
+    let up_vector = Vec3::new(0.0, 1.0, 0.0);
+    let focal_distance = (look_from - look_at).mag();
+    let aperture = 0.15;
+    let vertical_fov = 20.0;
+    let aspect_ratio = aspect_ratio.0 as f64 / aspect_ratio.1 as f64;
+
     let camera = Camera::new(
-        Point::new(-2.0, 2.0, 1.0),
-        Point::new(0.0, 0.0, -1.0),
-        Vec3::new(0.0, 1.0, 0.0),
-        20.0,
-        16.0 / 9.0,
+        look_from,
+        look_at,
+        up_vector,
+        vertical_fov,
+        aspect_ratio,
+        aperture,
+        focal_distance,
     );
 
     for y in 0..height {
@@ -99,7 +109,7 @@ fn main() {
                 let u = (x as f64 + rand_x) / (width - 1) as f64;
                 let v = 1.0 - (y as f64 + rand_y) / (height - 1) as f64;
 
-                let r = camera.get_ray(u, v);
+                let r = camera.get_ray(u, v, &vec_dist, &mut rng);
                 color += ray_color(&r, &world, max_depth, &vec_dist, &mut rng);
             }
             color /= samples_per_pixel as f64;
@@ -115,7 +125,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/camera-positioning-zoom.png");
+    let path = Path::new(r"./output/depth-of-field.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
