@@ -47,6 +47,60 @@ fn ray_color(
     (1.0 - t) * Point::new(1.0, 1.0, 1.0) + t * Point::new(0.5, 0.7, 1.0)
 }
 
+fn random_scene(sample_dist: &Uniform<f64>, rng: &mut ThreadRng) -> hittable::List {
+    let mut world = hittable::List::default();
+    let ground = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    world.add(Sphere::new(Point::new(0.0, -1000.0, 0.0), 1000.0, ground));
+
+    for a in 0..20 {
+        for b in 0..20 {
+            let center = Vec3::new(
+                -11.0 + a as f64 + 0.9 * sample_dist.sample(rng),
+                0.2,
+                -11.0 + b as f64 + 0.9 * sample_dist.sample(rng),
+            );
+
+            if (center - Point::new(4.0, 0.2, 0.0)).mag() <= 0.9 {
+                continue;
+            }
+
+            match sample_dist.sample(rng) {
+                choice if choice < 0.8 => {
+                    // Matte
+                    let random_a = Color::random(sample_dist, rng);
+                    let random_b = Color::random(sample_dist, rng);
+                    let albedo = random_a.schur(random_b);
+                    let sphere_material = Arc::new(Lambertian::new(albedo));
+                    world.add(Sphere::new(center, 0.2, sphere_material));
+                }
+                choice if choice < 0.95 => {
+                    // Metal
+                    let albedo = Color::new(0.5, 0.5, 0.5) + 0.5 * Color::random(sample_dist, rng);
+                    let fuzz = 0.15 * sample_dist.sample(rng);
+                    let sphere_material = Arc::new(Metal::new(albedo, fuzz));
+                    world.add(Sphere::new(center, 0.2, sphere_material));
+                }
+                _ => {
+                    // Glass
+                    let sphere_material = Arc::new(Dielectric::new(RefractiveIndex::CrownGlass));
+                    world.add(Sphere::new(center, 0.2, sphere_material));
+                }
+            }
+        }
+    }
+
+    let glass = Arc::new(Dielectric::new(RefractiveIndex::CrownGlass));
+    world.add(Sphere::new(Point::new(0.0, 1.0, 0.0), 1.0, glass));
+
+    let lambert = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    world.add(Sphere::new(Point::new(-4.0, 1.0, 0.0), 1.0, lambert));
+
+    let metal = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.3), 0.0));
+    world.add(Sphere::new(Point::new(4.0, 1.0, 0.0), 1.0, metal));
+
+    world
+}
+
 fn main() {
     let height: usize = 288;
     // TODO: A type for this
@@ -66,25 +120,14 @@ fn main() {
     // Get index of Red value. Green and Blue are +1, +2
     let image_index = |x: usize, y: usize| 3 * (y * width + x);
 
-    // World materials
-    let ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
-    let left = Arc::new(Dielectric::new(RefractiveIndex::Sapphire));
-    let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.05));
-
-    // World objects
-    let mut world = hittable::List::default();
-    world.add(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0, ground));
-    world.add(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5, center));
-    world.add(Sphere::new(Point::new(-1.0, 0.0, -1.0), 0.5, left));
-    world.add(Sphere::new(Point::new(1.0, 0.0, -1.0), 0.5, right));
+    let world = random_scene(&sample_dist, &mut rng);
 
     // Create camera
-    let look_from = Point::new(-2.0, 2.0, 1.0);
-    let look_at = Point::new(0.0, 0.0, -1.0);
+    let look_from = Point::new(13.0, 2.0, 3.0);
+    let look_at = Point::new(0.0, 0.0, 0.0);
     let up_vector = Vec3::new(0.0, 1.0, 0.0);
-    let focal_distance = (look_from - look_at).mag();
-    let aperture = 0.15;
+    let focal_distance = 10.0;
+    let aperture = 0.1;
     let vertical_fov = 20.0;
     let aspect_ratio = aspect_ratio.0 as f64 / aspect_ratio.1 as f64;
 
@@ -125,7 +168,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/depth-of-field.png");
+    let path = Path::new(r"./output/random-scene.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
