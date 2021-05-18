@@ -102,12 +102,12 @@ fn random_scene(sample_dist: &Uniform<f64>, rng: &mut ThreadRng) -> hittable::Li
 }
 
 fn main() {
-    let height: usize = 108;
+    let height: usize = 1080;
     // TODO: A type for this
     let aspect_ratio = (16, 9);
     let get_width = |height: usize| aspect_ratio.0 * height / aspect_ratio.1;
     let width = get_width(height);
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 500;
     let max_depth = 50;
 
     // Random number utilities
@@ -124,11 +124,11 @@ fn main() {
 
     // Create camera
     let look_from = Point::new(13.0, 2.0, 3.0);
-    let look_at = Point::new(0.0, 0.0, 0.0);
+    let look_at = Point::new(4.0, 1.0, 1.0);
     let up_vector = Vec3::new(0.0, 1.0, 0.0);
-    let focal_distance = 10.0;
+    let focal_distance = (look_at - look_from).mag();
     let aperture = 0.1;
-    let vertical_fov = 20.0;
+    let vertical_fov = 5.0;
     let aspect_ratio = aspect_ratio.0 as f64 / aspect_ratio.1 as f64;
 
     let camera = Camera::new(
@@ -168,7 +168,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/random-scene.png");
+    let path = Path::new(r"./output/random-scene-zoom.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
