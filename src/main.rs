@@ -16,7 +16,7 @@ use camera::Camera;
 use hittable::{Hittable, Sphere};
 use material::{Dielectric, Lambertian, Metal, RefractiveIndex, Scatter};
 use ray::Ray;
-use vec::{Color, Point};
+use vec::{Color, Point, Vec3};
 
 fn ray_color(
     r: &Ray,
@@ -67,17 +67,26 @@ fn main() {
     let image_index = |x: usize, y: usize| 3 * (y * width + x);
 
     // World materials
-    let left = Arc::new(Lambertian::new(Color::new(0.0, 0.0, 1.0)));
-    let right = Arc::new(Metal::new(Color::new(0.9, 0.1, 0.1), 0.1));
+    let ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    let left = Arc::new(Dielectric::new(RefractiveIndex::Sapphire));
+    let right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
 
     // World objects
-    let r = std::f64::consts::FRAC_PI_4.cos();
     let mut world = hittable::List::default();
-    world.add(Sphere::new(Point::new(-r, 0.0, -1.0), r, left));
-    world.add(Sphere::new(Point::new(r, 0.0, -1.0), r, right));
+    world.add(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0, ground));
+    world.add(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5, center));
+    world.add(Sphere::new(Point::new(-1.0, 0.0, -1.0), 0.5, left));
+    world.add(Sphere::new(Point::new(1.0, 0.0, -1.0), 0.5, right));
 
     // Create camera
-    let camera = Camera::new(90.0, 16.0 / 9.0);
+    let camera = Camera::new(
+        Point::new(-2.0, 2.0, 1.0),
+        Point::new(0.0, 0.0, -1.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        20.0,
+        16.0 / 9.0,
+    );
 
     for y in 0..height {
         print!("\rScanlines remaining {:>5}", height - y);
@@ -106,7 +115,7 @@ fn main() {
     }
     print!("\r");
 
-    let path = Path::new(r"./output/wide-angle-camera.png");
+    let path = Path::new(r"./output/camera-positioning-zoom.png");
     let file = File::create(path).unwrap();
     let w = &mut BufWriter::new(file);
 
